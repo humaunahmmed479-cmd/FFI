@@ -1,0 +1,68 @@
+name: Build Battle Royale 3D APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Prepare debug.keystore
+        run: |
+          if [ -f debug.keystore.base64 ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ ! -f debug.keystore ]; then
+            keytool -genkeypair -v -keystore debug.keystore -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Build Debug APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Rename APK to Game Name
+        run: cp app/build/outputs/apk/debug/app-debug.apk Battle-Royale-3D.apk
+
+      - name: Publish Direct APK to GitHub Releases (No ZIP)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view latest-apk >/dev/null 2>&1; then
+            gh release upload latest-apk Battle-Royale-3D.apk --clobber
+          else
+            gh release create latest-apk Battle-Royale-3D.apk \
+              --title "Battle Royale 3D APK" \
+              --notes "Direct Android APK download (No ZIP)." \
+              --latest
+          fi
+
+      - name: Upload APK Artifact Backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: Battle-Royale-3D-APK
+          path: Battle-Royale-3D.apk
