@@ -1,0 +1,6 @@
+{
+  "name": "Battle Royale 3D",
+  "description": "3D third-person and first-person Battle Royale game with plane drop, loot zones, vehicles, shrinking safe zone, and WebSocket multiplayer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
